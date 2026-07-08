@@ -1,0 +1,70 @@
+name: Plan
+
+on:
+  push:
+    branches: 
+    - master
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  TofuPlan:
+    runs-on: ubuntu-latest
+
+    env:
+      TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
+      TF_VAR_state_bucket_name: ${{ secrets.STATE_BUCKET_NAME }}
+      TF_VAR_state_file_key: ${{ secrets.STATE_FILE_KEY }}
+      TF_VAR_aws_state_role_arn: ${{ secrets.AWS_STATE_ROLE_ARN }}
+      TF_VAR_aws_deploy_role_arn: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+
+    defaults:
+      run:
+        working-directory: ./infrastructure/eks
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup environment
+        uses: ./.github/actions
+
+      - name: Initialize
+        run: tofu init -input=false
+
+      - name: Plan
+        run: tofu plan -input=false
+
+  TofuApply:
+    needs: TofuPlan
+    runs-on: ubuntu-latest
+    environment: prod
+    defaults:
+      run:
+        working-directory: ./infrastructure
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+
+    env:
+      TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
+      TF_VAR_state_bucket_name: ${{ secrets.STATE_BUCKET_NAME }}
+      TF_VAR_state_file_key: ${{ secrets.STATE_FILE_KEY }}
+      TF_VAR_aws_state_role_arn: ${{ secrets.AWS_STATE_ROLE_ARN }}
+      TF_VAR_aws_deploy_role_arn: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup environment
+        uses: ./.github/actions
+
+      - name: Initialize
+        run: tofu init -input=false
+
+      - name: Apply
+        run: tofu apply -input=false -auto-approve
