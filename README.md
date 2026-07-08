@@ -1,3 +1,2 @@
 # Purpose
-
-Compare running an example workload on EKS and on a self-hosted cluster.
+A hands-on comparison of managed Kubernetes on AWS EKS and self-managed Kubernetes with kubeadm on Hetzner Cloud, running the same GitOps-managed, observable OpenTelemetry microservices workload.
