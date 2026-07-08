@@ -1,0 +1,33 @@
+name: "Setup Environment"
+description: "Configures GitHub OIDC and installs OpenTofu"
+
+runs:
+  using: "composite"
+
+  steps:
+    - name: Setup OpenTofu
+      uses: opentofu/setup-opentofu@v2
+
+    - name: Configure GitHub OIDC token
+      uses: actions/github-script@v9
+      with:
+        script: |
+          const fs = require("fs")
+          const path = require("path")
+
+          const token = await core.getIDToken("sts.amazonaws.com")
+          core.setSecret(token)
+
+          const tokenFile = path.join(
+            process.env.RUNNER_TEMP,
+            "aws-oidc-token"
+          )
+
+          fs.writeFileSync(tokenFile, token, {
+            mode: 0o600
+          })
+
+          core.exportVariable(
+            "TF_VAR_aws_web_identity_token_file",
+            tokenFile
+          )
